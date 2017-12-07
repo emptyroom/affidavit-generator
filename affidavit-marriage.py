@@ -48,6 +48,9 @@ p.style = document.styles['ListNumber']
 run = p.add_run()
 run.add_break()
 
+table = document.add_table(rows = 2, cols = 2)
+sworn = table.cell(0, 1)
+sworn.text = "SWORN/AFFIRMED BEFORE ME, at Carleton University, Ottawa, Ontario this"
 
 
 document.save('affidavit-new.docx')
