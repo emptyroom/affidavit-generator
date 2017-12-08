@@ -1,6 +1,7 @@
 from docx import Document
 from docx.shared import Pt
-from Tkinter import *
+import Tkinter
+import tkSimpleDialog
 import time
 import datetime
 
@@ -8,61 +9,29 @@ document = Document('affidavit-template.docx')
 document.save('affidavit-new.docx')
 document._body.clear_content()
 
-fields = 'Student Name', 'Spouse Name', 'Location', 'Date Living Since'
-
-def makeform(root, fields):
-   entries = []
-   for field in fields:
-      row = Frame(root)
-      lab = Label(row, width=15, text=field, anchor='w')
-      ent = Entry(row)
-      row.pack(side=TOP, fill=X, padx=5, pady=5)
-      lab.pack(side=LEFT)
-      ent.pack(side=RIGHT, expand=YES, fill=X)
-      entries.append((field, ent))
-   return entries
+root = Tkinter.Tk()
+root.geometry("1000x300")
+root.withdraw()
 
 
-if __name__ == '__main__':
-   root = Tk()
-   ents = makeform(root, fields)
-   root.bind('<Return>', (lambda event, e=ents: fetch(e)))
-   b1 = Button(root, text='Generate')
-   b1.pack(side=LEFT, padx=5, pady=5)
-   b2 = Button(root, text='Quit', command=root.quit)
-   b2.pack(side=LEFT, padx=5, pady=5)
-   root.mainloop()
-
-
+studentName = tkSimpleDialog.askstring("Student Name", "Please enter the student's name")
+spouseName =  tkSimpleDialog.askstring("Spouse Name", "Please enter the spouse's name")
+location = tkSimpleDialog.askstring("Location", "Please enter the city and province")
+livingsince = tkSimpleDialog.askstring("Date Living Since", "Please enter the date the couple began living together")
 
 i = time.strftime("%c")
 now = datetime.datetime.now()
 
 underline = "_______________________________________"
 
-for style in document.styles:
-    print style.name
-
-#print "What is the student's first and last name?"
-#studentName = raw_input()
-
-#print "What is the spouse's first and last name?"
-#spouseName = raw_input()
-
-#print "What is the city and province?"
-#location = raw_input()
-
-#print "What date did the couple start living together?"
-#livingsince = raw_input()
-
-title = document.add_heading('AFFIDAVIT OF MARRIAGE')
+title = document.add_heading('AFFIDAVIT OF MARITAL STATUS')
 title.style = document.styles['Heading 1']
 run = title.add_run()
 run.add_break()
 
 p = document.add_paragraph(
-    "We, %s and %s, both of %s, SOLEMNLY AFFIRM AND DECLARE THAT:" % (
-    studentName, spouseName, location))
+"We, %s and %s, both of %s, SOLEMNLY AFFIRM AND DECLARE THAT:" % (
+studentName, spouseName, location))
 
 run = p.add_run()
 run.add_break()
