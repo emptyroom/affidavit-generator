@@ -1,31 +1,59 @@
 from docx import Document
 from docx.shared import Pt
+from Tkinter import *
 import time
 import datetime
-
-i = time.strftime("%c")
-now = datetime.datetime.now()
 
 document = Document('affidavit-template.docx')
 document.save('affidavit-new.docx')
 document._body.clear_content()
+
+fields = 'Student Name', 'Spouse Name', 'Location', 'Date Living Since'
+
+def makeform(root, fields):
+   entries = []
+   for field in fields:
+      row = Frame(root)
+      lab = Label(row, width=15, text=field, anchor='w')
+      ent = Entry(row)
+      row.pack(side=TOP, fill=X, padx=5, pady=5)
+      lab.pack(side=LEFT)
+      ent.pack(side=RIGHT, expand=YES, fill=X)
+      entries.append((field, ent))
+   return entries
+
+
+if __name__ == '__main__':
+   root = Tk()
+   ents = makeform(root, fields)
+   root.bind('<Return>', (lambda event, e=ents: fetch(e)))
+   b1 = Button(root, text='Generate')
+   b1.pack(side=LEFT, padx=5, pady=5)
+   b2 = Button(root, text='Quit', command=root.quit)
+   b2.pack(side=LEFT, padx=5, pady=5)
+   root.mainloop()
+
+
+
+i = time.strftime("%c")
+now = datetime.datetime.now()
 
 underline = "_______________________________________"
 
 for style in document.styles:
     print style.name
 
-print "What is the student's first and last name?"
-studentName = raw_input()
+#print "What is the student's first and last name?"
+#studentName = raw_input()
 
-print "What is the spouse's first and last name?"
-spouseName = raw_input()
+#print "What is the spouse's first and last name?"
+#spouseName = raw_input()
 
-print "What is the city and province?"
-location = raw_input()
+#print "What is the city and province?"
+#location = raw_input()
 
-print "What date did the couple start living together?"
-livingsince = raw_input()
+#print "What date did the couple start living together?"
+#livingsince = raw_input()
 
 title = document.add_heading('AFFIDAVIT OF MARRIAGE')
 title.style = document.styles['Heading 1']
