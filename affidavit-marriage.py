@@ -1,10 +1,19 @@
 from docx import Document
 from docx.shared import Pt
-from datetime import *
+import time
+import datetime
+
+i = time.strftime("%c")
+now = datetime.datetime.now()
 
 document = Document('affidavit-template.docx')
 document.save('affidavit-new.docx')
 document._body.clear_content()
+
+underline = "_______________________________________"
+
+for style in document.styles:
+    print style.name
 
 print "What is the student's first and last name?"
 studentName = raw_input()
@@ -47,10 +56,31 @@ p = document.add_paragraph(
 p.style = document.styles['ListNumber']
 run = p.add_run()
 run.add_break()
+run.add_break()
+run.add_break()
 
-table = document.add_table(rows = 2, cols = 2)
-sworn = table.cell(0, 1)
-sworn.text = "SWORN/AFFIRMED BEFORE ME, at Carleton University, Ottawa, Ontario this"
+table = document.add_table(rows = 6, cols = 2)
+table.style = 'Hello'
 
+sworn = table.cell(0, 0)
+sworn.add_paragraph("SWORN/AFFIRMED BEFORE ME, at Carleton University, Ottawa, Ontario this %s day of %s, %s" % (time.strftime("%d"), time.strftime("%B"), now.year))
+
+firstUnderline = table.cell(0, 1)
+firstUnderline.add_paragraph(underline)
+
+firstSig = table.cell(0, 1)
+firstSig.add_paragraph(studentName)
+
+commUnderline = table.cell(5, 0)
+commUnderline.add_paragraph(underline)
+
+commissioner = table.cell(5, 0)
+commissioner.add_paragraph("Mark Alexander Robinson")
+
+secondUnderline = table.cell(5, 1)
+secondUnderline.add_paragraph(underline)
+
+secondSig = table.cell(5, 1)
+secondSig.add_paragraph(spouseName)
 
 document.save('affidavit-new.docx')
