@@ -13,10 +13,20 @@ root = Tkinter.Tk()
 root.geometry("1000x300")
 root.withdraw()
 
+childrenNames = []
+childrenBdays = []
+
 studentName = tkSimpleDialog.askstring("Student Name", "Please enter the student's name")
 spouseName =  tkSimpleDialog.askstring("Spouse Name", "Please enter the spouse's name")
 location = tkSimpleDialog.askstring("Location", "Please enter the city and province")
 livingsince = tkSimpleDialog.askstring("Date Living Since", "Please enter the date the couple began living together")
+children = tkSimpleDialog.askinteger("Number of Chidlren", "Please enter the number of children in number format")
+
+#appends children name and birth dates to separate lists to be later inserted into table
+for i in range(0, children):
+    childrenNames.append(tkSimpleDialog.askstring(
+                    "Child Name", "Please enter the name of child %d" % (i+1)))
+    childrenBdays.append(tkSimpleDialog.askstring("Child Birth Date", "Please enter the birth date of child %d in MONTH DATE, YEAR format" % (i+1)))
 
 title = document.add_heading('AFFIDAVIT OF MARITAL STATUS')
 title.style = document.styles['Heading 1']
@@ -53,6 +63,18 @@ p = document.add_paragraph(
 p.style = document.styles['ListNumber']
 run = p.add_run()
 run.add_break()
+
+p = document.add_paragraph(
+        "We are the custodial and natural (or adoptive) parents of %d child(ren), namely:" % children)
+p.style = document.styles['ListNumber']
+run = p.add_run()
+run.add_break()
+run.add_break()
+
+for i in range(0, children):
+        run = p.add_run("%s, born %s" % (childrenNames[i], childrenBdays[i]))
+        run.add_break()
+        run.add_break()
 
 p = document.add_paragraph(
         "The information contained in this affidavit is provided for the sole purpose of supporting an application for financial aid under the Ontario Student Assistance Program (OSAP).")
