@@ -1,16 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from docx import Document
-from docx.shared import Pt
 
 from tkinter import *
 from tkinter import ttk
 
-import tkSimpleDialog
+import tkSimpleDialog as tkSD
+import tkFileDialog
 import tkMessageBox
 
-import subprocess
 import legal
+
+import os
 
 
 class mainapp:
@@ -29,92 +30,123 @@ class mainapp:
         self.menubar.add_cascade(label="File", menu=self.filemenu)
         root.config(menu=self.menubar)
 
-        self.label = Label(root, text="Select the type of affidavit",
-                           padx=4, pady=4).grid(row=0, column=0)
+        # frame for showing what info is needed
+        self.title = Label(root, text="What you'll need:",
+                           bg=mycolor, fg='white')
+        self.title.grid(row=2, column=0, padx=4, pady=4, sticky="NW")
 
-        # frame for showing what info i needed
-        self.title = Label(root, text="What you'll need").grid(row=3)
-
-        self.info_frame = Frame(root, highlightbackground="grey",
-                                highlightcolor="grey", highlightthickness=1,
-                                bd=0)
-
-        self.info_frame.grid(row=4, column=0, padx=4, pady=4)
+        self.info_frame = Frame(root, highlightbackground=bordercolor,
+                                highlightcolor=bordercolor,
+                                highlightthickness=1, bd=0)
+        self.info_frame.grid(row=2, column=1, padx=4, pady=4, sticky="W")
 
         self.info = StringVar()
-        self.info.set("What you'll need")
-        self.info_label = Label(self.info_frame, wraplength=150,
-                                textvariable=self.info).grid(row=4)
+        self.info_label = Label(self.info_frame, wraplength=200,
+                                bg=buttoncolor, fg='white',
+                                textvariable=self.info, anchor="w")
+        self.info_label.grid(row=2, column=1, sticky="W")
 
-        # combobox
+        # combobox for selecting affidavit
+        self.label = Label(root, text="Select the type of affidavit:",
+                           padx=4, pady=4, bg=mycolor, fg='white')
+        self.label.grid(row=1, column=0, sticky="NW")
+
         self.value = StringVar()
         self.afftype = ttk.Combobox(self.master, textvariable=self.value,
                                     state='readonly')
         self.afftype['values'] = aff_info_required.keys()
+        self.afftype.grid(row=1, column=1, sticky="W")
+        self.afftype.bind('<<ComboboxSelected>>', self.displayinfo)
         self.afftype.current(0)
-        self.afftype.grid(row=2)
-        self.afftype.bind('<<ComboboxSelected>>', self.displayinfo(self.info))
+        self.displayinfo(self)
 
-        self.make = Button(root, text="Generate", padx=2, pady=2,
+        # button for running python-docx script
+        self.make = Button(root, text="Generate", fg='white', bg=buttoncolor,
                            command=self.make_doc)
-        self.make.grid(row=2, column=1)
+        self.make.grid(row=7, column=0, padx=10, pady=10)
+
+        # directory select button
+        self.save_location = Button(root, text='Browse', fg='white',
+                                    bg=buttoncolor, command=self.set_directory)
+        self.save_location.grid(row=5, column=3, padx=10, pady=10)
+
+        self.save_label = Label(root, text="Save location:",
+                                bg=mycolor, fg='white')
+        self.save_label.grid(row=5, column=0, padx=4, pady=4, sticky="W")
+
+        self.save_directory = StringVar()
+        self.save_directory.set(os.getcwd())
+        self.info_label = Label(root, wraplength=200,
+                                bg=buttoncolor, fg='white',
+                                textvariable=self.save_directory,
+                                anchor="w").grid(row=5, column=1, sticky="W")
 
     def client_exit(self):
         exit()
+
+    def set_directory(self):
+        tmp_dir = tkFileDialog.askdirectory()
+        self.save_directory.set(tmp_dir)
+
+    def get_directory(self):
+        current_dir = self.save_directory.get()
+        return current_dir
 
     def about(self):
             tkMessageBox.showinfo("About",
                                   "made by Shaun Anderson with python-docx")
 
     def displayinfo(self, event):
-        i = []
-        for x in aff_info_required.keys():
-            i.append(aff_info_required[x])
-        self.info.set(i)
+        print "User selection is %s" % self.afftype.get()
+        x = []
+        for i in aff_info_required[self.afftype.get()]:
+            x.append(i)
+        self.info.set('\n'.join(x))
 
     def get_info(self):
 
-            studentName = tkSimpleDialog.askstring("Student Name",
-                                                   ("Please enter the "
-                                                    "student's name"))
-            spouseName = tkSimpleDialog.askstring("Spouse Name",
-                                                  "Please enter the spouse's name")
-            location = tkSimpleDialog.askstring("Location",
-                                                "Please enter the city and province")
-            livingsince = tkSimpleDialog.askstring("Date Living Since",
-                                                   ("Please enter the date the couple "
-                                                    "began living together"))
+            studentName = tkSD.askstring("Student Name",
+                                         "Please enter the student's name")
+            spouseName = tkSD.askstring("Spouse Name",
+                                        "Please enter the spouse's name")
+            location = tkSD.askstring("Location",
+                                      "Please enter the city and province")
+            livingsince = tkSD.askstring("Date Living Since",
+                                         ("Please enter the date the couple "
+                                          "began living together"))
 
-            children = tkMessageBox.askquestion("Children", "Do they have dependents?")
+            children = tkMessageBox.askquestion("Children",
+                                                "Do they have dependents?")
 
             childrenNames = []
             childrenBdays = []
 
             if children == 'yes':
-                number_of_children = tkSimpleDialog.askinteger("Number", "How many kids?")
+                number_of_children = tkSD.askinteger("Number",
+                                                     "How many kids?")
                 for i in range(0, number_of_children):
-                    childrenNames.append(tkSimpleDialog.askstring(
-                                    "Child Name", "Please enter the name of child %d" % (i+1)))
-                    childrenBdays.append(tkSimpleDialog.askstring("Child Birth Date",
-                                                                  ("Please enter the birth "
-                                                                   "date of child %d in "
-                                                                   "MONTH DATE, YEAR format"
-                                                                   % (i+1))))
+                    childrenNames.append(tkSD.askstring("Name", legal.q_chn
+                                                        % (i + 1)))
+
+                    childrenBdays.append(tkSD.askstring("BDAY", (legal.q_ch
+                                                        % (i + 1))))
+            else:
+                number_of_children = 0
 
             return {'Student Name': studentName, 'Spouse Name': spouseName,
                     'Location': location, 'Living Since': livingsince,
                     'Children Names': childrenNames, 'Children Birthdays':
                     childrenBdays, 'Children': number_of_children}
 
-
     def make_doc(self):
+
+        self.get_directory()
         answers = self.get_info()
-        print answers
         document = Document('affidavit-template.docx')
         document.save('affidavit-%s.docx' % answers["Student Name"])
         document._body.clear_content()
 
-        title = document.add_heading('AFFIDAVIT OF MARITAL STATUS')
+        title = document.add_heading('AFFIDAVIT')
         title.style = document.styles['Heading 1']
         run = title.add_run()
         run.add_break()
@@ -137,24 +169,29 @@ class mainapp:
         finalRB = country.cell(2, 1)
         finalRB.text = ')'
 
-        p = document.add_paragraph(
-                "We, %s and %s, both of %s, SOLEMNLY AFFIRM AND DECLARE THAT:" % (
-                 answers["Student Name"], answers["Spouse Name"],
-                 answers["Location"]))
+        if self.afftype.get() == 'Separated':
+            p = document.add_paragraph(legal.sole_declare %
+                                       (answers["Student Name"],
+                                        answers["Location"]))
+            run = p.add_run()
+            run.add_break()
 
+        elif self.afftype.get() == 'Common Law':
+            p = document.add_paragraph(legal.declare %
+                                       (answers["Student Name"],
+                                        answers["Spouse Name"],
+                                        answers["Location"]))
+            run = p.add_run()
+            run.add_break()
+
+        p = document.add_paragraph(legal.living % answers["Living Since"])
+        p.style = document.styles['ListNumber']
         run = p.add_run()
         run.add_break()
 
-        p = document.add_paragraph("We are living together in a conjugal relationship"+
-                                   "and have done so continuously since %s"
-                                   % answers["Living Since"])
-
-        p.style = document.styles['ListNumber']
-
         if answers["Children"] > 0:
 
-            p = document.add_paragraph("We are the custodial and natural (or adoptive)" +
-                                       "parents of %d child(ren), namely:" % answers['Children'])
+            p = document.add_paragraph(legal.custodial % answers['Children'])
             p.style = document.styles['ListNumber']
             run = p.add_run()
             run.add_break()
@@ -164,7 +201,8 @@ class mainapp:
             children_bdays = answers['Children Birthdays']
 
             for i in range(0, answers["Children"]):
-                    run = p.add_run("%s, born %s" % (children_names[i], children_bdays[i]))
+                    run = p.add_run("%s, born %s" %
+                                    (children_names[i], children_bdays[i]))
                     run.add_break()
                     run.add_break()
 
@@ -182,6 +220,7 @@ class mainapp:
         run.add_break()
         run.add_break()
 
+        # table to hold signatures
         table = document.add_table(rows=6, cols=2)
         table.style = 'Hello'
 
@@ -206,27 +245,32 @@ class mainapp:
         secondSig = table.cell(5, 1)
         secondSig.add_paragraph(answers["Spouse Name"])
 
-        document.save('affidavit-%s.docx' % answers["Student Name"])
+        filename = str("Affidavit-%s.docx" % answers["Student Name"])
+        filedirectory = self.get_directory()
+        filepath = os.path.join(filedirectory, filename)
 
-#    def run_program(self):
-#        self.var_Selected = self.afftype.get()
-#        print "will run program %s" % self.var_Selected
-#
-#        for i in afflist:
-#            print i
-#            if i == self.var_Selected:
-#                print afflist[i]
-#            subprocess.Popen(['python', afflist[self.var_Selected]])
+        document.save(filepath)
+
 
 if __name__ == '__main__':
 
-    root = Tk()
+    # ui colors
+    mycolor = '#2c2f33'
+    buttoncolor = '#4f555c'
+    bordercolor = '#99aab5'
 
-    aff_info_required = {'Common Law': ['Student Name', 'Spouse Name',
-                         'Number of Children', 'Names of Children',
-                         'Birthdates of Children', 'Location',
-                         'Date living since']}
+    root = Tk()
+    root.configure(bg=mycolor)
+    aff_info_required = {'Common Law':
+                         ['Student Name', 'Spouse Name',
+                          'Number of Children', 'Names of Children',
+                          'Birthdates of Children', 'Location',
+                          'Date living since'],
+                         'Separated':
+                         ['Student Name', 'Spouse Name',
+                          'Number of Children', 'Names of Children']
+                         }
 
     main_app = mainapp(root)
-    root.geometry('300x200')
+    root.geometry('450x300')
     root.mainloop()
