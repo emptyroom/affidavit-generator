@@ -105,15 +105,27 @@ class mainapp:
 
     def get_info(self):
 
+            doc_type = self.afftype.get()
+
             studentName = tkSD.askstring("Student Name",
                                          "Please enter the student's name")
+
             spouseName = tkSD.askstring("Spouse Name",
                                         "Please enter the spouse's name")
             location = tkSD.askstring("Location",
                                       "Please enter the city and province")
-            livingsince = tkSD.askstring("Date Living Since",
-                                         ("Please enter the date the couple "
-                                          "began living together"))
+
+            if doc_type == 'Common Law':
+                livingsince = tkSD.askstring("Date Living Since",
+                                             ("Please enter the date the "
+                                              "couple began living together"))
+                separated = ''
+
+            elif doc_type == 'Separated':
+                livingsince = ''
+                separated = tkSD.askstring("Date Separated",
+                                           ("Please enter "
+                                            "the date the couple separated"))
 
             children = tkMessageBox.askquestion("Children",
                                                 "Do they have dependents?")
@@ -133,19 +145,41 @@ class mainapp:
             else:
                 number_of_children = 0
 
+            if doc_type == 'Separated':
+
+                shrd = tkMessageBox.askquestion("Shared", "Is custody shared?")
+
+                if shrd == 'yes':
+
+                    cst = Toplevel()
+                    cst.title = "Custody Details"
+
+                    msg = Message(cst, text="Select the children %s has custody of" % studentName) 
+                    msg.grid(row=0, column=0)
+
+                    student_custody = Listbox(cst, selectmode='multiple')
+                    for i in childrenNames:
+                        x = 0
+                        x += 1
+                        student_custody.insert(x, i)
+
+                    student_custody.grid(row=0, column=1)
+
             return {'Student Name': studentName, 'Spouse Name': spouseName,
                     'Location': location, 'Living Since': livingsince,
                     'Children Names': childrenNames, 'Children Birthdays':
                     childrenBdays, 'Children': number_of_children}
 
     def make_doc(self):
-
+        # grab user selected directory and affidavit type
         self.get_directory()
         answers = self.get_info()
+
         document = Document('affidavit-template.docx')
         document.save('affidavit-%s.docx' % answers["Student Name"])
         document._body.clear_content()
 
+        # affidavit header with scilicet
         title = document.add_heading('AFFIDAVIT')
         title.style = document.styles['Heading 1']
         run = title.add_run()
@@ -268,7 +302,9 @@ if __name__ == '__main__':
                           'Date living since'],
                          'Separated':
                          ['Student Name', 'Spouse Name',
-                          'Number of Children', 'Names of Children']
+                          'Number of Children', 'Names of Children',
+                          'Birthdates of Children', 'Location',
+                          'Custody Details', 'Address']
                          }
 
     main_app = mainapp(root)
