@@ -12,7 +12,7 @@ underline = "_______________________________________"
 
 declare = ("We, %s and %s, both of %s, SOLEMNLY AFFIRM AND DECLARE THAT:")
 
-sole_declare = ("")
+sole_declare = ("I, %s, of %s, SOLEMNLY AFFIRM AND DECLARE THAT:")
 
 marriage_law = ("We understand that the acceptance of this affidavit by " +
                 "the Carleton University Awards Office and the Ontario " +
@@ -28,8 +28,14 @@ aff_purpose = ("The information contained in this affidavit is provided " +
 living = ("We are living together in a conjugal relationship and have done " +
           "so continuously since %s")
 
+separated_date = ("We separated on or about %s and have lived in separated residences ever since. We have no formal legal separation agreement")
+
+solecust = ("I have sole physical custody of my child(ren). They reside with me on a full-time basis.")
+
 custodial = ("We are the custodial and natural(or adoptive) parents of %d " +
              "child(ren), namely:")
+
+separated = ("My marital status is separated")
 
 affirmed = ("SWORN/AFFIRMED BEFORE ME, at Carleton University, " +
             "Ottawa, Ontario this %s day of %s, %s" %

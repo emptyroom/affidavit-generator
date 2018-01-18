@@ -16,8 +16,7 @@ import os
 
 class mainapp:
 
-    def __init__(self, master):
-
+    def __init__(self, master, *args, **kwargs):
         self.master = master
         master.title("Affidavit Generator")
 
@@ -107,76 +106,90 @@ class mainapp:
 
             doc_type = self.afftype.get()
 
-            studentName = tkSD.askstring("Student Name",
-                                         "Please enter the student's name")
+            self.studentName = tkSD.askstring("Student Name",
+                                              "Please enter the student's name")
 
-            spouseName = tkSD.askstring("Spouse Name",
-                                        "Please enter the spouse's name")
-            location = tkSD.askstring("Location",
-                                      "Please enter the city and province")
+            self.spouseName = tkSD.askstring("Spouse Name",
+                                             "Please enter the spouse's name")
+            self.location = tkSD.askstring("Location",
+                                           "Please enter the city and province")
 
             if doc_type == 'Common Law':
-                livingsince = tkSD.askstring("Date Living Since",
-                                             ("Please enter the date the "
-                                              "couple began living together"))
-                separated = ''
+                self.livingsince = tkSD.askstring("Date Living Since",
+                                                 ("Please enter the date the "
+                                                  "couple began living together"))
+                self.separated = ''
 
             elif doc_type == 'Separated':
-                livingsince = ''
-                separated = tkSD.askstring("Date Separated",
-                                           ("Please enter "
-                                            "the date the couple separated"))
+                self.livingsince = ''
+                self.separated = tkSD.askstring("Date Separated",
+                                               ("Please enter "
+                                                "the date the couple separated"))
 
-            children = tkMessageBox.askquestion("Children",
-                                                "Do they have dependents?")
+            self.children = tkMessageBox.askquestion("Children",
+                                                     "Do they have dependents?")
 
-            childrenNames = []
-            childrenBdays = []
+            self.childrenNames = []
+            self.childrenBdays = []
 
-            if children == 'yes':
-                number_of_children = tkSD.askinteger("Number",
+            if self.children == 'yes':
+                self.number_of_children = tkSD.askinteger("Number",
                                                      "How many kids?")
-                for i in range(0, number_of_children):
-                    childrenNames.append(tkSD.askstring("Name", legal.q_chn
+                for i in range(0, self.number_of_children):
+                    self.childrenNames.append(tkSD.askstring("Name", legal.q_chn
                                                         % (i + 1)))
 
-                    childrenBdays.append(tkSD.askstring("BDAY", (legal.q_ch
+                    self.childrenBdays.append(tkSD.askstring("BDAY", (legal.q_ch
                                                         % (i + 1))))
             else:
-                number_of_children = 0
+                self.number_of_children = 0
 
             if doc_type == 'Separated':
 
-                shrd = tkMessageBox.askquestion("Shared", "Is custody shared?")
+                self.open_cst_window()
+                self.st_custody = self.app.selection
 
-                if shrd == 'yes':
+                # allows user to select custody details
+                # if self.shrd == 'yes':
+                #
+                #    self.open_cst_window()
+                #    self.st_custody = self.app.cst_results
+                #    self.open_spcst_window()
+                #    self.sp_custody = self.app.cst_results
 
-                    cst = Toplevel()
-                    cst.title = "Custody Details"
+            return {'Student Name':
+                    self.studentName,
+                    'Spouse Name':
+                    self.spouseName,
+                    'Location':
+                    self.location,
+                    'Living Since':
+                    self.livingsince,
+                    'Children Names':
+                    self.childrenNames,
+                    'Children Birthdays':
+                    self.childrenBdays,
+                    'Children':
+                    self.number_of_children,
+                    'Custody':
+                    self.st_custody,
+                    'Separated Date':
+                    self.separated
+                    }
 
-                    msg = Message(cst, text="Select the children %s has custody of" % studentName) 
-                    msg.grid(row=0, column=0)
+    def open_cst_window(self):
 
-                    student_custody = Listbox(cst, selectmode='multiple')
-                    for i in childrenNames:
-                        x = 0
-                        x += 1
-                        student_custody.insert(x, i)
-
-                    student_custody.grid(row=0, column=1)
-
-            return {'Student Name': studentName, 'Spouse Name': spouseName,
-                    'Location': location, 'Living Since': livingsince,
-                    'Children Names': childrenNames, 'Children Birthdays':
-                    childrenBdays, 'Children': number_of_children}
+        self.cst_window = Toplevel(self.master)
+        self.app = Custody(self.cst_window)
+        self.master.wait_window(self.cst_window)
 
     def make_doc(self):
         # grab user selected directory and affidavit type
         self.get_directory()
-        answers = self.get_info()
-
+        self.answers = self.get_info()
+        print self.answers
         document = Document('affidavit-template.docx')
-        document.save('affidavit-%s.docx' % answers["Student Name"])
+        document.save('affidavit-%s.docx' % self.answers["Student Name"])
         document._body.clear_content()
 
         # affidavit header with scilicet
@@ -205,46 +218,73 @@ class mainapp:
 
         if self.afftype.get() == 'Separated':
             p = document.add_paragraph(legal.sole_declare %
-                                       (answers["Student Name"],
-                                        answers["Location"]))
+                                       (self.answers["Student Name"],
+                                        self.answers["Location"]))
             run = p.add_run()
             run.add_break()
 
         elif self.afftype.get() == 'Common Law':
             p = document.add_paragraph(legal.declare %
-                                       (answers["Student Name"],
-                                        answers["Spouse Name"],
-                                        answers["Location"]))
+                                       (self.answers["Student Name"],
+                                        self.answers["Spouse Name"],
+                                        self.answers["Location"]))
             run = p.add_run()
             run.add_break()
 
-        p = document.add_paragraph(legal.living % answers["Living Since"])
+        # declaration
+        p = document.add_paragraph(legal.aff_purpose)
         p.style = document.styles['ListNumber']
         run = p.add_run()
         run.add_break()
 
-        if answers["Children"] > 0:
+        if self.afftype.get() == 'Common Law':
 
-            p = document.add_paragraph(legal.custodial % answers['Children'])
+            p = document.add_paragraph(legal.living % self.answers["Living Since"])
+            p.style = document.styles['ListNumber']
+            run = p.add_run()
+            run.add_break()
+
+        elif self.afftype.get() == 'Separated':
+            p = document.add_paragraph(legal.separated)
+            p.style = document.styles['ListNumber']
+            run = p.add_run()
+            run.add_break()
+
+            p = document.add_paragraph("The name of my spouse is %s" self.answers["Spouse Name"])
+            p.style = document.styles['ListNumber']
+            run = p.add_run()
+            run.add_break()
+
+            p = document.add_paragraph(legal.living % self.answers["Separated Date"])
+            p.style = document.styles['ListNumber']
+            run = p.add_run()
+            run.add_break()
+
+        if self.answers["Children"] > 0:
+
+            p = document.add_paragraph(legal.custodial % self.answers['Children'])
             p.style = document.styles['ListNumber']
             run = p.add_run()
             run.add_break()
             run.add_break()
 
-            children_names = answers['Children Names']
-            children_bdays = answers['Children Birthdays']
+            children_names = self.answers['Children Names']
+            children_bdays = self.answers['Children Birthdays']
 
-            for i in range(0, answers["Children"]):
+            for i in range(0, self.answers["Children"]):
                     run = p.add_run("%s, born %s" %
                                     (children_names[i], children_bdays[i]))
                     run.add_break()
                     run.add_break()
 
-        p = document.add_paragraph(legal.aff_purpose)
+        if self.afftype.get() == 'Separated':
+            if self.answers['Custody'] == 'Sole Support':
 
-        p.style = document.styles['ListNumber']
-        run = p.add_run()
-        run.add_break()
+                p = document.add_paragraph(legal.solecust)
+                p.style = document.styles['ListNumber']
+                run = p.add_run()
+                run.add_break()
+
 
         p = document.add_paragraph(legal.marriage_law)
         p.style = document.styles['ListNumber']
@@ -265,7 +305,7 @@ class mainapp:
         firstUnderline.text = legal.underline
 
         firstSig = table.cell(0, 1)
-        firstSig.add_paragraph(answers["Student Name"])
+        firstSig.add_paragraph(self.answers["Student Name"])
 
         commUnderline = table.cell(5, 0)
         commUnderline.add_paragraph(legal.underline)
@@ -277,13 +317,37 @@ class mainapp:
         secondUnderline.add_paragraph(legal.underline)
 
         secondSig = table.cell(5, 1)
-        secondSig.add_paragraph(answers["Spouse Name"])
+        secondSig.add_paragraph(self.answers["Spouse Name"])
 
-        filename = str("Affidavit-%s.docx" % answers["Student Name"])
+        filename = str("Affidavit-%s.docx" % self.answers["Student Name"])
         filedirectory = self.get_directory()
         filepath = os.path.join(filedirectory, filename)
 
         document.save(filepath)
+
+
+class Custody:
+    def __init__(self, master):
+        self.master = master
+        master.title("Custody Details")
+        self.msg = Message(master,
+                           text="Is the custody shared or does the student have sole support")
+        self.msg.grid(row=0, column=0)
+
+        # create listbox of children names entered
+        self.student_custody = Listbox(master, selectmode=EXTENDED)
+        self.student_custody.grid(row=1, column=0)
+
+        self.student_custody.insert(END, "Shared Custody")
+        self.student_custody.insert(END, "Sole Support")
+
+        self.btn = Button(master, text="Okay", command=self.select)
+        self.btn.grid(row=2, column=0)
+
+    def select(self):
+
+        self.selection = self.student_custody.get(self.student_custody.curselection())
+        self.master.destroy()
 
 
 if __name__ == '__main__':
@@ -292,7 +356,6 @@ if __name__ == '__main__':
     mycolor = '#2c2f33'
     buttoncolor = '#4f555c'
     bordercolor = '#99aab5'
-
     root = Tk()
     root.configure(bg=mycolor)
     aff_info_required = {'Common Law':
@@ -307,6 +370,6 @@ if __name__ == '__main__':
                           'Custody Details', 'Address']
                          }
 
-    main_app = mainapp(root)
+    app = mainapp(root)
     root.geometry('450x300')
     root.mainloop()
