@@ -1,8 +1,8 @@
-# python-admin-tools
-Python scripts for various administrative tasks in an office setting.
+# Affidavit Generator
+Generates affidavits based on user input. Uses python-docx library. 
 
-## Renaming
-Renames multiple pdf files according to csv list of values.
+## Requirements
 
-## Affidavit Generator
-Generates affidavits based on user input. Uses python-docx library.
+Have only tested with Python 2.7. 
+
+Requires affidavit-template.docs in root directory to run and display proper styling.
