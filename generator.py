@@ -33,24 +33,28 @@ class mainapp:
         self.title = Label(root, text="What you'll need:")
         self.title.grid(row=2, column=0, padx=4, pady=4, sticky="NW")
 
-        self.info_frame = Frame(root, highlightthickness=1, bd=0)
+        # frame for holding required information
+        self.info_frame = Frame(root, bd=0)
         self.info_frame.grid(row=2, column=1, padx=4, pady=4, sticky="W")
+        self.info_frame['borderwidth'] = 2
+        self.info_frame['relief'] = 'sunken'
 
-        self.info = StringVar()
-        self.info_label = Label(self.info_frame, wraplength=200,
-                                textvariable=self.info, anchor="w")
-        self.info_label.grid(row=2, column=1, sticky="W")
+        # label to insert required information
+        self.req_info = StringVar()
+        self.req_info = Text(self.info_frame, width=40, height=4, wrap='word')
+        self.req_info.grid(row=2, column=1)
+        self.req_info.config(state='disabled')
 
         # combobox for selecting affidavit
-        self.label = Label(root, text="Select the type of affidavit:",
+        self.label = Label(root, text="Affidavit Type",
                            padx=4, pady=4)
-        self.label.grid(row=1, column=0)
+        self.label.grid(row=1, column=0, sticky="NW")
 
         self.value = StringVar()
         self.afftype = ttk.Combobox(self.master, textvariable=self.value,
                                     state='readonly')
         self.afftype['values'] = aff_info_required.keys()
-        self.afftype.grid(row=1, column=1, columnspan=2)
+        self.afftype.grid(row=1, column=1)
         self.afftype.bind('<<ComboboxSelected>>', self.displayinfo)
         self.afftype.current(0)
         self.displayinfo(self)
@@ -67,22 +71,27 @@ class mainapp:
         self.save_label = Label(root, text="Save location:")
         self.save_label.grid(row=5, column=0, padx=4, pady=4, sticky="W")
 
-        self.save_directory = StringVar()
-        self.save_directory.set(os.getcwd())
-        self.info_label = Label(root, wraplength=200,
-                                textvariable=self.save_directory,
-                                anchor="w").grid(row=5, column=1,
-                                                 columnspan=2, sticky="W")
+        self.start_dir = StringVar()
+        self.start_dir.set(os.getcwd())
+
+        self.dir_label = Text(root, width=40, height=1, state='normal',
+                              wrap='word')
+        self.dir_label.insert('1.0', self.start_dir.get())
+        self.dir_label.config(state='disabled')
+        self.dir_label.grid(row=5, column=1)
 
     def client_exit(self):
         exit()
 
     def set_directory(self):
         tmp_dir = tkFileDialog.askdirectory()
-        self.save_directory.set(tmp_dir)
+        self.dir_label.config(state='normal')
+        self.dir_label.delete('1.0', END)
+        self.dir_label.insert('1.0', tmp_dir)
+        self.dir_label.config(state='disabled')
 
     def get_directory(self):
-        current_dir = self.save_directory.get()
+        current_dir = self.dir_label.get('1.0', 'end-1c')
         return current_dir
 
     def about(self):
@@ -90,11 +99,14 @@ class mainapp:
                       "made by Shaun Anderson with python-docx")
 
     def displayinfo(self, event):
+        self.req_info.config(state='normal')
         print "User selection is %s" % self.afftype.get()
         x = ""
         for i in aff_info_required[self.afftype.get()]:
             x += (i + ', ')
-        self.info.set(x)
+
+        self.req_info.insert('1.0', x)
+        self.req_info.config(state='disabled')
 
     def get_info(self):
 
@@ -105,14 +117,17 @@ class mainapp:
 
             self.spName = tkSD.askstring("Spouse Name",
                                          "Please enter the spouse's name")
+
+            if doc_type == 'Separated' or 'Sole Support':
+                self.streetname = tkSD.askstring("Civic Addres",
+                                                 legal.q_street)
+
             self.city = tkSD.askstring("city",
                                        "Please enter the city and province")
 
             if doc_type == 'Common Law':
                 self.livingsince = tkSD.askstring("Date Living Since",
-                                                  ("Please enter the date the "
-                                                   "couple began "
-                                                   "living together"))
+                                                  legal.q_date_living)
                 self.separated = ''
 
             elif doc_type == 'Separated':
@@ -172,7 +187,9 @@ class mainapp:
                     'Custody':
                     self.st_custody,
                     'Separated Date':
-                    self.separated
+                    self.separated,
+                    'Street':
+                    self.streetname
                     }
 
     def open_cst_window(self):
@@ -291,6 +308,10 @@ class mainapp:
                 run = p.add_run()
                 run.add_break()
 
+                run = p.add_run(self.answers['Street'])
+                run.add_break()
+                run = p.add_run(self.answers['city'])
+
             elif self.answers['Custody'] == 'Shared Custody':
                 p = document.add_paragraph(legal.sharecust)
                 p.style = document.styles['ListNumber']
@@ -395,12 +416,12 @@ if __name__ == '__main__':
     aff_info_required = {'Common Law':
                          ['Student Name', 'Spouse Name',
                           'Number of Children', 'Names of Children',
-                          'Birthdates of Children', 'Location',
+                          'Birthdates of Children', 'City, Province',
                           'Date living since'],
                          'Separated':
                          ['Student Name', 'Spouse Name',
                           'Number of Children', 'Names of Children',
-                          'Birthdates of Children', 'Location',
+                          'Birthdates of Children', 'Address',
                           'Custody Details', 'Address'],
                          'Sole Support':
                          ['Student Name', 'Never Married or Widowed',
@@ -409,5 +430,6 @@ if __name__ == '__main__':
                          }
 
     app = mainapp(root)
-    root.geometry('500x200')
+    root.geometry('550x200')
+    root.resizable(False, False)
     root.mainloop()
