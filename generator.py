@@ -29,7 +29,6 @@ class mainapp:
         self.menubar.add_cascade(label="File", menu=self.filemenu)
         root.config(menu=self.menubar)
 
-        # frame for showing what info is needed
         self.title = Label(root, text="What you'll need:")
         self.title.grid(row=2, column=0, padx=4, pady=4, sticky="NW")
 
@@ -39,11 +38,17 @@ class mainapp:
         self.info_frame['borderwidth'] = 2
         self.info_frame['relief'] = 'sunken'
 
-        # label to insert required information
+        # text box to insert required information
         self.req_info = StringVar()
         self.req_info = Text(self.info_frame, width=40, height=4, wrap='word')
         self.req_info.grid(row=2, column=1)
         self.req_info.config(state='disabled')
+
+        # scrollbar for required information text box
+        self.req_scroll = Scrollbar(self.info_frame,
+                                    command=self.req_info.yview)
+        self.req_scroll.grid(row=2, column=1, sticky='nsew')
+        self.req_info['yscrollcommand'] = self.req_scroll.set
 
         # combobox for selecting affidavit
         self.label = Label(root, text="Affidavit Type",
@@ -100,41 +105,52 @@ class mainapp:
 
     def displayinfo(self, event):
         self.req_info.config(state='normal')
-        print "User selection is %s" % self.afftype.get()
-        x = ""
-        for i in aff_info_required[self.afftype.get()]:
-            x += (i + ', ')
+        self.req_info.delete('1.0', END)
 
-        self.req_info.insert('1.0', x)
+        print "User selection is %s" % self.afftype.get()
+
+        for i in aff_info_required[self.afftype.get()]:
+            self.req_info.insert('1.0', i + '\n')
+
         self.req_info.config(state='disabled')
 
     def get_info(self):
 
-            doc_type = self.afftype.get()
+            self.doc_type = self.afftype.get()
 
             self.stName = tkSD.askstring("Student Name",
                                          "Please enter the student's name")
 
-            self.spName = tkSD.askstring("Spouse Name",
-                                         "Please enter the spouse's name")
+            if (self.doc_type == 'Separated' or
+               self.doc_type == 'Common Law'):
 
-            if doc_type == 'Separated' or 'Sole Support':
+                self.spName = tkSD.askstring("Spouse Name",
+                                             "Please enter the spouse's name")
+            else:
+                self.spName = ''
+
+            if self.doc_type == 'Separated' or 'Sole Support':
                 self.streetname = tkSD.askstring("Civic Addres",
                                                  legal.q_street)
+            else:
+                self.streetname = ''
 
             self.city = tkSD.askstring("city",
                                        "Please enter the city and province")
 
-            if doc_type == 'Common Law':
+            if self.doc_type == 'Common Law':
                 self.livingsince = tkSD.askstring("Date Living Since",
                                                   legal.q_date_living)
                 self.separated = ''
 
-            elif doc_type == 'Separated':
+            elif self.doc_type == 'Separated':
+                    self.livingsince = ''
+                    self.separated = tkSD.askstring("Date Separated",
+                                                    ("Please enter the date "
+                                                     "the couple separated"))
+            elif self.doc_type == 'Sole Support':
                 self.livingsince = ''
-                self.separated = tkSD.askstring("Date Separated",
-                                                ("Please enter the date "
-                                                 "the couple separated"))
+                self.separated = ''
 
             self.children = tkMB.askquestion("Children",
                                              "Do they have dependents?")
@@ -154,21 +170,22 @@ class mainapp:
             else:
                 self.number_of_children = 0
 
-            if doc_type == 'Separated' and self.children == 'yes':
+            if ((self.doc_type == 'Separated' or
+               self.doc_type == 'Sole Support') and self.children == 'yes'):
 
                 self.open_cst_window()
-                self.st_custody = self.app.selection
+
+                if self.doc_type == 'Separated':
+                    self.st_custody = self.app.selection
+                    self.sole_status = ''
+
+                elif self.doc_type == 'Sole Support':
+                    self.sole_status = self.app.selection
+                    self.st_custody = ''
 
             else:
                 self.st_custody = ''
-
-                # allows user to select custody details
-                # if self.shrd == 'yes':
-                #
-                #    self.open_cst_window()
-                #    self.st_custody = self.app.cst_results
-                #    self.open_spcst_window()
-                #    self.sp_custody = self.app.cst_results
+                self.sole_status = ''
 
             return {'Student Name':
                     self.stName,
@@ -186,6 +203,8 @@ class mainapp:
                     self.number_of_children,
                     'Custody':
                     self.st_custody,
+                    'Sole Status':
+                    self.sole_status,
                     'Separated Date':
                     self.separated,
                     'Street':
@@ -195,8 +214,8 @@ class mainapp:
     def open_cst_window(self):
 
         self.cst_window = Toplevel(self.master)
-        self.app = Custody(self.cst_window)
-        self.cst_window.geometry('225x150')
+        self.app = Custody(self.cst_window, self.doc_type)
+        self.cst_window.geometry('325x120')
         self.master.wait_window(self.cst_window)
 
     def make_doc(self):
@@ -232,6 +251,7 @@ class mainapp:
         finalRB = country.cell(2, 1)
         finalRB.text = ')'
 
+        # solemny affirm and declare
         if self.afftype.get() == 'Separated':
             p = document.add_paragraph(legal.sole_declare %
                                        (self.answers["Student Name"],
@@ -247,7 +267,7 @@ class mainapp:
             run = p.add_run()
             run.add_break()
 
-        # declaration
+        # for the purpose of supporting an OSAP application
         p = document.add_paragraph(legal.aff_purpose)
         p.style = document.styles['ListNumber']
         run = p.add_run()
@@ -279,11 +299,22 @@ class mainapp:
             run = p.add_run()
             run.add_break()
 
+        elif self.afftype.get() == 'Sole Support':
+
+            if self.answers['Sole Status'] == 'Widowed':
+                p = document.add_paragraph(legal.widowed)
+
+            elif self.answers['Sole Status'] == 'Never Married':
+                p = document.add_paragraph(legal.never_m)
+
+            p.style = document.styles['ListNumber']
+            run = p.add_run()
+
         if self.answers["Children"] > 0:
             if self.afftype.get() == 'Common Law':
                 p = document.add_paragraph(legal.cl_cust
                                            % self.answers['Children'])
-            elif self.afftype.get() == 'Separated':
+            elif self.afftype.get() == ('Separated' or 'Sole Support'):
                 p = document.add_paragraph(legal.sp_cust
                                            % self.answers['Children'])
             p.style = document.styles['ListNumber']
@@ -307,10 +338,12 @@ class mainapp:
                 p.style = document.styles['ListNumber']
                 run = p.add_run()
                 run.add_break()
+                run.add_break()
 
                 run = p.add_run(self.answers['Street'])
                 run.add_break()
                 run = p.add_run(self.answers['city'])
+                run.add_break()
 
             elif self.answers['Custody'] == 'Shared Custody':
                 p = document.add_paragraph(legal.sharecust)
@@ -322,6 +355,19 @@ class mainapp:
                 run = p.add_run('[DETAILS]')
                 run.add_break()
 
+        if self.afftype.get() == 'Sole Support':
+
+            p = document.add_paragraph(legal.solecust)
+            p.style = document.styles['ListNumber']
+            run = p.add_run()
+            run.add_break()
+            run.add_break()
+
+            run = p.add_run(self.answers['Street'])
+            run.add_break()
+            run = p.add_run(self.answers['city'])
+            run.add_break()
+
         if self.afftype.get() == 'Common Law':
 
             p = document.add_paragraph(legal.marriage_law)
@@ -332,13 +378,13 @@ class mainapp:
             run.add_break()
             run.add_break()
 
-        elif self.afftype.get() == 'Separated':
+        elif (self.afftype.get() == 'Separated' or
+              self.afftype.get() == 'Sole Support'):
 
             p = document.add_paragraph(legal.s_oath)
             p.style = document.styles['ListNumber']
 
             run = p.add_run()
-            run.add_break()
             run.add_break()
             run.add_break()
 
@@ -353,7 +399,10 @@ class mainapp:
             firstSig = table.cell(0, 1)
             firstUnderline = table.cell(0, 1)
             firstUnderline.text = legal.underline
-        elif self.afftype.get() == 'Separated':
+
+        elif (self.afftype.get() == 'Separated' or
+              self.afftype.get() == 'Sole Support'):
+
             firstSig = table.cell(4, 1)
             firstUnderline = table.cell(4, 1)
             firstUnderline.text = legal.underline
@@ -364,7 +413,7 @@ class mainapp:
         commUnderline.add_paragraph(legal.underline)
 
         commissioner = table.cell(5, 0)
-        commissioner.add_paragraph("Mark Alexander Robinson")
+        commissioner.add_paragraph("Shaun Anderson")
 
         if self.afftype.get() == 'Common Law':
 
@@ -384,28 +433,55 @@ class mainapp:
 
 class Custody:
 
-    def __init__(self, master):
-        self.master = master
-        master.title("Custody Details")
-        self.msg = Message(master,
-                           text=("Is the custody shared or does the "
-                                 " student have sole support"))
-        self.msg.grid(row=0, column=0)
+    def __init__(self, master, doc_type):
 
-        # create listbox of children names entered
-        self.cust = Listbox(master, selectmode=SINGLE)
-        self.cust.config(width=0, height=2)
-        self.cust.grid(row=1, column=0)
+        if doc_type == 'Separated':
+            self.master = master
+            master.title("Custody Details")
+            self.msg = Label(master,
+                             text=("Is the custody shared "
+                                   "or does the student have sole support?"))
+            self.msg.grid(row=0, column=0, padx=5, pady=5)
 
-        self.cust.insert(END, "Shared Custody")
-        self.cust.insert(END, "Sole Support")
+            # create listbox of children names entered
+            self.cust = Listbox(master, selectmode=SINGLE)
+            self.cust.config(height=2)
+            self.cust.grid(row=1, column=0, padx=5, pady=5)
 
-        self.btn = Button(master, text="Okay", command=self.select)
-        self.btn.grid(row=2, column=0)
+            self.cust.insert(END, "Shared Custody")
+            self.cust.insert(END, "Sole Support")
+
+            self.btn = Button(master, text="Okay",
+                              command=self.select)
+            self.btn.grid(row=2, column=0)
+
+        elif doc_type == 'Sole Support':
+            self.master = master
+            master.title("Sole Support Status")
+            self.msg = Label(master,
+                             text=("Please select the appropriate status"))
+            self.msg.grid(row=0, column=0, padx=5, pady=5)
+
+            # create listbox of children names entered
+            self.st_sole = Listbox(master, selectmode=SINGLE)
+            self.st_sole.config(height=2)
+            self.st_sole.grid(row=1, column=0, padx=5, pady=5)
+
+            self.st_sole.insert(END, "Never Married")
+            self.st_sole.insert(END, "Widowed")
+
+            self.btn = Button(master, text="Okay",
+                              command=self.select)
+            self.btn.grid(row=2, column=0)
 
     def select(self):
 
-        self.selection = self.cust.get(self.cust.curselection())
+        if app.doc_type == 'Separated':
+            self.selection = self.cust.get(self.cust.curselection())
+
+        elif app.doc_type == 'Sole Support':
+            self.selection = self.st_sole.get(self.st_sole.curselection())
+
         self.master.destroy()
 
 
@@ -426,7 +502,7 @@ if __name__ == '__main__':
                          'Sole Support':
                          ['Student Name', 'Never Married or Widowed',
                           'Number of Children', "Birthdates of Children",
-                          'Address']
+                          'Address'],
                          }
 
     app = mainapp(root)
