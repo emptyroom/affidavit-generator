@@ -109,8 +109,16 @@ class mainapp:
 
         print "User selection is %s" % self.afftype.get()
 
+        length = (len(aff_info_required[self.afftype.get()]))
+        print length
+        y = 1
         for i in aff_info_required[self.afftype.get()]:
-            self.req_info.insert('1.0', i + '\n')
+            print y
+            if y != length:
+                self.req_info.insert('1.0', i + '\n')
+            else:
+                self.req_info.insert(END, i)
+            y += 1
 
         self.req_info.config(state='disabled')
 
@@ -498,7 +506,7 @@ if __name__ == '__main__':
                          ['Student Name', 'Spouse Name',
                           'Number of Children', 'Names of Children',
                           'Birthdates of Children', 'Address',
-                          'Custody Details', 'Address'],
+                          'Custody Shared or Sole Support'],
                          'Sole Support':
                          ['Student Name', 'Never Married or Widowed',
                           'Number of Children', "Birthdates of Children",
