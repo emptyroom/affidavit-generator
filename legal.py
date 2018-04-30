@@ -47,6 +47,9 @@ cl_cust = ("We are the custodial and natural(or adoptive) parents of %d " +
 
 sp_cust = ("We are the adoptive or natural parents of %d child(ren), namely:")
 
+# for sole support template
+sole_pnt = ("I am the adoptive or natural parent of %d child(ren), namely:")
+
 separated = ("My marital status is separated.")
 
 affirmed = ("SWORN/AFFIRMED BEFORE ME, at Carleton University, " +
@@ -56,6 +59,7 @@ affirmed = ("SWORN/AFFIRMED BEFORE ME, at Carleton University, " +
 s_oath = ("I make this solemn declaration conscientiously knowing it " +
           "to be true and knowing that it is of the same force and effect " +
           "as if made under oath.")
+
 # questions for user input
 q_student_name = ("Student Name", "Please enter the student's name")
 q_spouse_name = ("Spouse Name", "Please enter the spouse's name")

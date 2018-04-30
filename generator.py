@@ -110,10 +110,8 @@ class mainapp:
         print "User selection is %s" % self.afftype.get()
 
         length = (len(aff_info_required[self.afftype.get()]))
-        print length
         y = 1
         for i in aff_info_required[self.afftype.get()]:
-            print y
             if y != length:
                 self.req_info.insert('1.0', i + '\n')
             else:
@@ -223,7 +221,7 @@ class mainapp:
 
         self.cst_window = Toplevel(self.master)
         self.app = Custody(self.cst_window, self.doc_type)
-        self.cst_window.geometry('325x120')
+        self.cst_window.geometry('325x120+412+342')
         self.master.wait_window(self.cst_window)
 
     def make_doc(self):
@@ -231,8 +229,15 @@ class mainapp:
         self.get_directory()
         self.answers = self.get_info()
         print self.answers
+
         document = Document('affidavit-template.docx')
-        document.save('affidavit-%s.docx' % self.answers["Student Name"])
+
+        # save the file
+        filename = str("Affidavit-%s.docx" % self.answers["Student Name"])
+        filedirectory = self.get_directory()
+        filepath = os.path.join(filedirectory, filename)
+        document.save(filepath)
+
         document._body.clear_content()
 
         # affidavit header with scilicet
@@ -261,6 +266,15 @@ class mainapp:
 
         # solemny affirm and declare
         if self.afftype.get() == 'Separated':
+
+            p = document.add_paragraph(legal.sole_declare %
+                                       (self.answers["Student Name"],
+                                        self.answers["city"]))
+            run = p.add_run()
+            run.add_break()
+
+        elif self.afftype.get() == 'Sole Support':
+
             p = document.add_paragraph(legal.sole_declare %
                                        (self.answers["Student Name"],
                                         self.answers["city"]))
@@ -311,9 +325,13 @@ class mainapp:
 
             if self.answers['Sole Status'] == 'Widowed':
                 p = document.add_paragraph(legal.widowed)
+                run = p.add_run()
+                run.add_break()
 
             elif self.answers['Sole Status'] == 'Never Married':
                 p = document.add_paragraph(legal.never_m)
+                run = p.add_run()
+                run.add_break()
 
             p.style = document.styles['ListNumber']
             run = p.add_run()
@@ -322,9 +340,13 @@ class mainapp:
             if self.afftype.get() == 'Common Law':
                 p = document.add_paragraph(legal.cl_cust
                                            % self.answers['Children'])
-            elif self.afftype.get() == ('Separated' or 'Sole Support'):
+            elif self.afftype.get() == 'Separated':
                 p = document.add_paragraph(legal.sp_cust
                                            % self.answers['Children'])
+            elif self.afftype.get() == 'Sole Support':
+                p = document.add_paragraph(legal.sole_pnt
+                                           % self.answers['Children'])
+
             p.style = document.styles['ListNumber']
             run = p.add_run()
             run.add_break()
@@ -421,7 +443,7 @@ class mainapp:
         commUnderline.add_paragraph(legal.underline)
 
         commissioner = table.cell(5, 0)
-        commissioner.add_paragraph("Shaun Anderson")
+        commissioner.add_paragraph("")
 
         if self.afftype.get() == 'Common Law':
 
@@ -513,7 +535,18 @@ if __name__ == '__main__':
                           'Address'],
                          }
 
+    w = 550
+    h = 200
+
+    # get screen width and height
+    ws = root.winfo_screenwidth()
+    hs = root.winfo_screenheight()
+
+    # calculate x and y coordinates for the TK root window
+    x = (ws / 2) - (w - 2)
+    y = (hs / 2) - (h - 2)
+
     app = mainapp(root)
-    root.geometry('550x200')
+    root.geometry('%dx%d+%d+%d' % (w, h, x, y))
     root.resizable(False, False)
     root.mainloop()
